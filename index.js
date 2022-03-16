@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var hasOwnProperty = Object.hasOwnProperty;
 
@@ -8,7 +8,9 @@ var hasOwnProperty = Object.hasOwnProperty;
  * @returns {*|boolean}
  */
 function isObject(item) {
-  return (item && typeof item === 'object' && !Array.isArray(item) && item !== null);
+  return (
+    item && typeof item === "object" && !Array.isArray(item) && item !== null
+  );
 }
 
 /**
@@ -51,7 +53,8 @@ function diff(objectA, objectB) {
  */
 function _valuesChild(object, keys, parent, joiner) {
   for (var key in object) {
-    if (isObject(object[key])) _valuesChild(object[key], keys, parent + joiner + key, joiner);
+    if (isObject(object[key]))
+      _valuesChild(object[key], keys, parent + joiner + key, joiner);
     else keys.push(object[key]);
   }
 }
@@ -65,7 +68,7 @@ function _valuesChild(object, keys, parent, joiner) {
 function values(object, joiner) {
   if (!isObject(object)) return null;
   var values = [];
-  var _joiner = joiner || '.';
+  var _joiner = joiner || ".";
 
   for (var key in object) {
     if (isObject(object[key])) _valuesChild(object[key], values, key, _joiner);
@@ -74,7 +77,6 @@ function values(object, joiner) {
 
   return values;
 }
-
 
 /**
  *
@@ -87,7 +89,8 @@ function values(object, joiner) {
  */
 function _keysChild(object, keys, parent, joiner) {
   for (var key in object) {
-    if (isObject(object[key])) _keysChild(object[key], keys, parent + joiner + key, joiner);
+    if (isObject(object[key]))
+      _keysChild(object[key], keys, parent + joiner + key, joiner);
     else keys.push(parent + joiner + key);
   }
 }
@@ -101,7 +104,7 @@ function _keysChild(object, keys, parent, joiner) {
 function keys(object, joiner) {
   if (!isObject(object)) return null;
   var keys = [];
-  var _joiner = joiner || '.';
+  var _joiner = joiner || ".";
 
   for (var key in object) {
     if (isObject(object[key])) _keysChild(object[key], keys, key, _joiner);
@@ -110,7 +113,6 @@ function keys(object, joiner) {
 
   return keys;
 }
-
 
 /**
  *
@@ -140,7 +142,7 @@ function _flattenChild(object, stack, parent, joiner) {
  * @returns {{}}
  */
 function flatten(object, joiner) {
-  var _joiner = joiner || '.';
+  var _joiner = joiner || ".";
   if (!isObject(object)) return null;
 
   var stack = {};
@@ -163,7 +165,7 @@ function flatten(object, joiner) {
  * @returns {{}}
  */
 function unflatten(object, joiner) {
-  var _joiner = joiner || '.';
+  var _joiner = joiner || ".";
   if (!isObject(object)) return null;
 
   var stack = {};
@@ -176,7 +178,6 @@ function unflatten(object, joiner) {
   return stack;
 }
 
-
 /**
  * Deep get a value from an object.
  * @param object
@@ -185,7 +186,7 @@ function unflatten(object, joiner) {
  * @returns {*}
  */
 function get(object, path, joiner) {
-  var keys = path.split(joiner || '.');
+  var keys = path.split(joiner || ".");
 
   var i = 0;
   var tmp = object;
@@ -194,7 +195,7 @@ function get(object, path, joiner) {
   while (i < len) {
     var key = keys[i++];
     if (!tmp || !hasOwnProperty.call(tmp, key)) {
-      return tmp = undefined;
+      return (tmp = undefined);
     }
     tmp = tmp[key];
   }
@@ -211,8 +212,8 @@ function get(object, path, joiner) {
  * @param joiner
  */
 function set(object, path, value, initPaths, joiner) {
-  if (!isObject(object)) return false;
-  var keys = path.split(joiner || '.');
+  if (!isObject(object) || object === constructor.prototype) return false;
+  var keys = path.split(joiner || ".");
 
   var i = 0;
   var len = keys.length - 1;
@@ -223,7 +224,11 @@ function set(object, path, value, initPaths, joiner) {
     object = object[key];
   }
 
-  if (isObject(object) || (Array.isArray(object) && !Number.isNaN(keys[i]))) object[keys[i]] = value;
+  if (
+    (initPaths && !hasOwnProperty.call(object, key)) ||
+    isPrototypePolluted(key)
+  )
+    object[key] = {};
   else return false;
   return true;
 }
@@ -238,21 +243,31 @@ function set(object, path, value, initPaths, joiner) {
  * @private
  */
 function _stringCondition(_condition, mapKey, _object, _source, key) {
-  var condition = _condition.split('=');
+  var condition = _condition.split("=");
   var conditionTarget = condition[0];
   var conditionValue = condition[1];
-  var notEqual = conditionTarget.indexOf('!') !== -1;
-  if (notEqual) conditionTarget = conditionTarget.replace('!', '');
+  var notEqual = conditionTarget.indexOf("!") !== -1;
+  if (notEqual) conditionTarget = conditionTarget.replace("!", "");
 
-  if (conditionValue) { // value compare condition
+  if (conditionValue) {
+    // value compare condition
     if (notEqual) {
-      if (hasOwnProperty.call(_source, conditionTarget) && _source[conditionTarget].toString() !== conditionValue) _object[key] = mapKey;
+      if (
+        hasOwnProperty.call(_source, conditionTarget) &&
+        _source[conditionTarget].toString() !== conditionValue
+      )
+        _object[key] = mapKey;
       else delete _object[key];
     } else {
-      if (hasOwnProperty.call(_source, conditionTarget) && _source[conditionTarget].toString() === conditionValue) _object[key] = mapKey;
+      if (
+        hasOwnProperty.call(_source, conditionTarget) &&
+        _source[conditionTarget].toString() === conditionValue
+      )
+        _object[key] = mapKey;
       else delete _object[key];
     }
-  } else { // hasOwnProp condition
+  } else {
+    // hasOwnProp condition
     if (hasOwnProperty.call(_source, conditionTarget)) _object[key] = mapKey;
     else delete _object[key];
   }
@@ -285,21 +300,36 @@ function _functionCondition(func, mapKey, _object, flattened, original, key) {
  * @param key
  * @private
  */
-function _objectCondition(_transformers, config, mapKey, _object, flattened, original, key) {
+function _objectCondition(
+  _transformers,
+  config,
+  mapKey,
+  _object,
+  flattened,
+  original,
+  key
+) {
   if (config.condition) {
     switch (typeof config.condition) {
-      case 'string':
+      case "string":
         _stringCondition(config.condition, mapKey, _object, flattened, key);
         break;
-      case 'function':
-        _functionCondition(config.condition, mapKey, _object, flattened, original, key);
+      case "function":
+        _functionCondition(
+          config.condition,
+          mapKey,
+          _object,
+          flattened,
+          original,
+          key
+        );
         break;
     }
   } else {
     _object[key] = mapKey;
   }
 
-  if (config.transformer && typeof config.transformer === 'function') {
+  if (config.transformer && typeof config.transformer === "function") {
     _transformers[key] = config.transformer;
   }
 }
@@ -313,8 +343,8 @@ function _objectCondition(_transformers, config, mapKey, _object, flattened, ori
 function mapToProps(object, source, noUndef, joiner) {
   if (!isObject(object)) return object;
   var key;
-  var _joiner = typeof noUndef === 'string' ? noUndef : joiner;
-  var _noUndef = typeof noUndef === 'boolean' ? noUndef : true;
+  var _joiner = typeof noUndef === "string" ? noUndef : joiner;
+  var _noUndef = typeof noUndef === "boolean" ? noUndef : true;
   var _object = flatten(object, _joiner);
   var _source = flatten(source, _joiner);
   var _transformers = {};
@@ -329,17 +359,31 @@ function mapToProps(object, source, noUndef, joiner) {
       // todo support multiple conditions later on
       if (mapValue instanceof Array) {
         switch (typeof mapValue[0]) {
-          case 'string':
+          case "string":
             _stringCondition(mapValue[0], mapValue[1], _object, _source, key);
             break;
-          case 'function':
-            _functionCondition(mapValue[0], mapValue[1], _object, _source, source, key);
+          case "function":
+            _functionCondition(
+              mapValue[0],
+              mapValue[1],
+              _object,
+              _source,
+              source,
+              key
+            );
             break;
-          case 'object':
-            _objectCondition(_transformers, mapValue[0], mapValue[1], _object, _source, source, key);
+          case "object":
+            _objectCondition(
+              _transformers,
+              mapValue[0],
+              mapValue[1],
+              _object,
+              _source,
+              source,
+              key
+            );
             break;
         }
-
       }
     }
     _object = flatten(_object, _joiner);
@@ -354,7 +398,8 @@ function mapToProps(object, source, noUndef, joiner) {
       sourceValue = get(source, targetKey, _joiner);
     }
 
-    if (_transformers[key]) sourceValue = _transformers[key](sourceValue, key, _source);
+    if (_transformers[key])
+      sourceValue = _transformers[key](sourceValue, key, _source);
     if (_noUndef && sourceValue !== undefined) _object[key] = sourceValue;
     else if (_noUndef) delete _object[key];
     else _object[key] = sourceValue;
@@ -383,6 +428,15 @@ function merge(target, source) {
     }
   }
   return target;
+}
+
+/**
+ * 
+ * @param key
+ * @returns {boolean}
+ */
+ function isPrototypePolluted(key) {
+  return ['__proto__', 'constructor', 'prototype'].includes(key);
 }
 
 module.exports.get = get;
